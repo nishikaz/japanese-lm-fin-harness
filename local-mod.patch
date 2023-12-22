@@ -1,0 +1,133 @@
+diff --git a/developments/make_harness_sh.py b/developments/make_harness_sh.py
+index 694a303..4ed19e3 100644
+--- a/developments/make_harness_sh.py
++++ b/developments/make_harness_sh.py
+@@ -133,13 +133,15 @@ def main() -> None:
+         )
+         values = ",".join(
+             [
+-                prefix + ":" + str(values["metric_values"])
++                prefix
++                + ":"
++                + str(values["metric_values"] * (1.5 if prefix == "chabsa" else 1.0))
+                 for prefix, values in best_metrics.items()
+             ]
+         )
+         harness_command = f"""MODEL_ARGS="{','.join(model_args)}"
+ TASK="{task}"
+-python main.py --model {'hf-causal' if cast(str, model_setting['model']).startswith('pfnet/plamo') else 'hf-causal-experimental'} --model_args $MODEL_ARGS --tasks $TASK --num_fewshot "{num_fewshots}" --output_path "models/{model_name}/result.json"
++python main.py --model {'hf-causal' if cast(str, model_setting['model']).startswith('pfnet/plamo') else 'hf-causal-experimental'} --model_args $MODEL_ARGS --tasks $TASK --num_fewshot "{num_fewshots}" --no_cache --output_path "models/{model_name}/result.json"
+ # Estimated results: {values}
+ """
+         save_path = os.path.join(args.outputs_path, model_name, "harness.sh")
+diff --git a/developments/models/rinna.json b/developments/models/rinna.json
+index 2a7a53b..35400cd 100644
+--- a/developments/models/rinna.json
++++ b/developments/models/rinna.json
+@@ -78,5 +78,45 @@
+         "n_gpu": 1,
+         "gpu_vram_gb": 24,
+         "require_hf_login": false
++    },
++    {
++        "model": "rinna/nekomata-14b",
++        "model_args": [
++            "trust_remote_code=True"
++        ],
++        "memory_Gi": 128,
++        "n_gpu": 1,
++        "gpu_vram_gb": 80,
++        "require_hf_login": false
++    },
++    {
++        "model": "rinna/nekomata-14b-instruction",
++        "model_args": [
++            "trust_remote_code=True"
++        ],
++        "memory_Gi": 128,
++        "n_gpu": 1,
++        "gpu_vram_gb": 80,
++        "require_hf_login": false
++    },
++    {
++        "model": "rinna/nekomata-7b",
++        "model_args": [
++            "trust_remote_code=True"
++        ],
++        "memory_Gi": 48,
++        "n_gpu": 1,
++        "gpu_vram_gb": 24,
++        "require_hf_login": false
++    },
++    {
++        "model": "rinna/nekomata-7b-instruction",
++        "model_args": [
++            "trust_remote_code=True"
++        ],
++        "memory_Gi": 48,
++        "n_gpu": 1,
++        "gpu_vram_gb": 24,
++        "require_hf_login": false
+     }
+ ]
+\ No newline at end of file
+diff --git a/developments/models/stabilityai.json b/developments/models/stabilityai.json
+index b46d35e..1ee6843 100644
+--- a/developments/models/stabilityai.json
++++ b/developments/models/stabilityai.json
+@@ -31,5 +31,27 @@
+         "n_gpu": 1,
+         "gpu_vram_gb": 32,
+         "require_hf_login": false
++    },
++    {
++        "model": "stabilityai/japanese-stablelm-base-beta-70b",
++        "model_args": [
++            "trust_remote_code=True",
++            "device_map_option=auto"
++        ],
++        "memory_Gi": 256,
++        "n_gpu": 4,
++        "gpu_vram_gb": 80,
++        "require_hf_login": false
++    },
++    {
++        "model": "stabilityai/japanese-stablelm-instruct-beta-70b",
++        "model_args": [
++            "trust_remote_code=True",
++            "device_map_option=auto"
++        ],
++        "memory_Gi": 256,
++        "n_gpu": 4,
++        "gpu_vram_gb": 80,
++        "require_hf_login": false
+     }
+ ]
+\ No newline at end of file
+diff --git a/jlm_fin_eval/tasks/chabsa.py b/jlm_fin_eval/tasks/chabsa.py
+index e43a070..5fcf681 100644
+--- a/jlm_fin_eval/tasks/chabsa.py
++++ b/jlm_fin_eval/tasks/chabsa.py
+@@ -90,7 +90,7 @@ class Chabsa(MultipleChoiceTask):
+         if key == "acc":
+             return (np.asarray(predictions) == np.asarray(references)).mean()
+         elif key == "f1":
+-            return f1_score(references, predictions, average="macro") * 1.5
++            return f1_score(references, predictions, average="macro")
+         else:
+             raise KeyError(key)
+ 
+diff --git a/pyproject.toml b/pyproject.toml
+index 03743db..fcd7603 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -22,6 +22,9 @@ protobuf = "^4.24.4"
+ openpyxl = "^3.1.2"
+ xlrd = "^2.0.1"
+ openai = "0.28.1"
++transformers = "^4.36.2"
++tiktoken = "^0.5.2"
++transformers-stream-generator = "^0.0.4"
+ 
+ 
+ [tool.poetry.group.dev.dependencies]
