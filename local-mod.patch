@@ -1,0 +1,73 @@
+diff --git a/README.md b/README.md
+index f2b623a..1d87602 100644
+--- a/README.md
++++ b/README.md
+@@ -112,16 +112,25 @@ poetry run python check_prompt.py
+ # Citation
+ If you use this repository, please cite the following paper:
+ ```
+-TBD
++@preprint{Hirano2023-pre-finllm,
++  title={{金融分野における言語モデル性能評価のための日本語金融ベンチマーク構築}},
++  autor={平野, 正徳},
++  doi={10.51094/jxiv.564},
++  year={2023}
++}
+ ```
+-
+-Or cite directory this repository:
+ ```
+-@misc{Hirano2023-jlfh
+-    title={{Japanese Language Model Financial Evaluation Harness}},
+-    autors={Masanori Hirano},
+-    year={2023},
+-    url = {https://github.com/pfnet-research/japanese-lm-fin-harness}
++@preprint{Hirano2023-pre-finllm,
++  title={{金融分野における言語モデル性能評価のための日本語金融ベンチマーク構築}},
++  autor={平野, 正徳},
++  doi={10.51094/jxiv.564},
++  year={2023}
++}
++@preprint{Hirano2023-pre-finllm,
++  title={{Construction of a Japanese Financial Benchmark for Large Language Model Evaluation in the Financial Domain [in Japanese]}},
++  autor={Masanori HIRANO},
++  doi={10.51094/jxiv.564},
++  year={2023}
+ }
+ ```
+ 
+diff --git a/developments/make_harness_sh.py b/developments/make_harness_sh.py
+index 694a303..4ed19e3 100644
+--- a/developments/make_harness_sh.py
++++ b/developments/make_harness_sh.py
+@@ -133,13 +133,15 @@ def main() -> None:
+         )
+         values = ",".join(
+             [
+-                prefix + ":" + str(values["metric_values"])
++                prefix
++                + ":"
++                + str(values["metric_values"] * (1.5 if prefix == "chabsa" else 1.0))
+                 for prefix, values in best_metrics.items()
+             ]
+         )
+         harness_command = f"""MODEL_ARGS="{','.join(model_args)}"
+ TASK="{task}"
+-python main.py --model {'hf-causal' if cast(str, model_setting['model']).startswith('pfnet/plamo') else 'hf-causal-experimental'} --model_args $MODEL_ARGS --tasks $TASK --num_fewshot "{num_fewshots}" --output_path "models/{model_name}/result.json"
++python main.py --model {'hf-causal' if cast(str, model_setting['model']).startswith('pfnet/plamo') else 'hf-causal-experimental'} --model_args $MODEL_ARGS --tasks $TASK --num_fewshot "{num_fewshots}" --no_cache --output_path "models/{model_name}/result.json"
+ # Estimated results: {values}
+ """
+         save_path = os.path.join(args.outputs_path, model_name, "harness.sh")
+diff --git a/jlm_fin_eval/tasks/chabsa.py b/jlm_fin_eval/tasks/chabsa.py
+index e43a070..5fcf681 100644
+--- a/jlm_fin_eval/tasks/chabsa.py
++++ b/jlm_fin_eval/tasks/chabsa.py
+@@ -90,7 +90,7 @@ class Chabsa(MultipleChoiceTask):
+         if key == "acc":
+             return (np.asarray(predictions) == np.asarray(references)).mean()
+         elif key == "f1":
+-            return f1_score(references, predictions, average="macro") * 1.5
++            return f1_score(references, predictions, average="macro")
+         else:
+             raise KeyError(key)
+ 
