@@ -1,0 +1,32 @@
+diff --git a/developments/make_harness_sh.py b/developments/make_harness_sh.py
+index 694a303..4ed19e3 100644
+--- a/developments/make_harness_sh.py
++++ b/developments/make_harness_sh.py
+@@ -133,13 +133,15 @@ def main() -> None:
+         )
+         values = ",".join(
+             [
+-                prefix + ":" + str(values["metric_values"])
++                prefix
++                + ":"
++                + str(values["metric_values"] * (1.5 if prefix == "chabsa" else 1.0))
+                 for prefix, values in best_metrics.items()
+             ]
+         )
+         harness_command = f"""MODEL_ARGS="{','.join(model_args)}"
+ TASK="{task}"
+-python main.py --model {'hf-causal' if cast(str, model_setting['model']).startswith('pfnet/plamo') else 'hf-causal-experimental'} --model_args $MODEL_ARGS --tasks $TASK --num_fewshot "{num_fewshots}" --output_path "models/{model_name}/result.json"
++python main.py --model {'hf-causal' if cast(str, model_setting['model']).startswith('pfnet/plamo') else 'hf-causal-experimental'} --model_args $MODEL_ARGS --tasks $TASK --num_fewshot "{num_fewshots}" --no_cache --output_path "models/{model_name}/result.json"
+ # Estimated results: {values}
+ """
+         save_path = os.path.join(args.outputs_path, model_name, "harness.sh")
+diff --git a/models/lightblue/qarasu-14B-chat-plus-unleashed/harness.sh b/models/lightblue/qarasu-14B-chat-plus-unleashed/harness.sh
+new file mode 100644
+index 0000000..0103612
+--- /dev/null
++++ b/models/lightblue/qarasu-14B-chat-plus-unleashed/harness.sh
+@@ -0,0 +1,4 @@
++MODEL_ARGS="pretrained=lightblue/qarasu-14B-chat-plus-unleashed,trust_remote_code=True"
++TASK="chabsa-1.0-0.1,cma_basics-1.0-0.1.2,cpa_audit-1.0-0.3,security_sales_1-1.0-0.2.1,fp2-1.0-0.1.2"
++python main.py --model hf-causal-experimental --model_args $MODEL_ARGS --tasks $TASK --num_fewshot "4,3,0,2,4" --no_cache --output_path "models/lightblue/qarasu-14B-chat-plus-unleashed/result.json"
++# Estimated results: chabsa:0.896868503735033,cma_basics:0.5789473684210527,cpa_audit:0.20351758793969849,security_sales_1:0.631578947368421,fp2:0.3157894736842105
