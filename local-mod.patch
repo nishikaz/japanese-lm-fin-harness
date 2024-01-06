@@ -1,0 +1,45 @@
+diff --git a/developments/make_harness_sh.py b/developments/make_harness_sh.py
+index 694a303..4ed19e3 100644
+--- a/developments/make_harness_sh.py
++++ b/developments/make_harness_sh.py
+@@ -133,13 +133,15 @@ def main() -> None:
+         )
+         values = ",".join(
+             [
+-                prefix + ":" + str(values["metric_values"])
++                prefix
++                + ":"
++                + str(values["metric_values"] * (1.5 if prefix == "chabsa" else 1.0))
+                 for prefix, values in best_metrics.items()
+             ]
+         )
+         harness_command = f"""MODEL_ARGS="{','.join(model_args)}"
+ TASK="{task}"
+-python main.py --model {'hf-causal' if cast(str, model_setting['model']).startswith('pfnet/plamo') else 'hf-causal-experimental'} --model_args $MODEL_ARGS --tasks $TASK --num_fewshot "{num_fewshots}" --output_path "models/{model_name}/result.json"
++python main.py --model {'hf-causal' if cast(str, model_setting['model']).startswith('pfnet/plamo') else 'hf-causal-experimental'} --model_args $MODEL_ARGS --tasks $TASK --num_fewshot "{num_fewshots}" --no_cache --output_path "models/{model_name}/result.json"
+ # Estimated results: {values}
+ """
+         save_path = os.path.join(args.outputs_path, model_name, "harness.sh")
+diff --git a/jlm_fin_eval/tasks/chabsa.py b/jlm_fin_eval/tasks/chabsa.py
+index e43a070..5fcf681 100644
+--- a/jlm_fin_eval/tasks/chabsa.py
++++ b/jlm_fin_eval/tasks/chabsa.py
+@@ -90,7 +90,7 @@ class Chabsa(MultipleChoiceTask):
+         if key == "acc":
+             return (np.asarray(predictions) == np.asarray(references)).mean()
+         elif key == "f1":
+-            return f1_score(references, predictions, average="macro") * 1.5
++            return f1_score(references, predictions, average="macro")
+         else:
+             raise KeyError(key)
+ 
+diff --git a/models/stabilityai/japanese-stablelm-base-beta-70b/harness.sh b/models/stabilityai/japanese-stablelm-base-beta-70b/harness.sh
+new file mode 100644
+index 0000000..8c71e11
+--- /dev/null
++++ b/models/stabilityai/japanese-stablelm-base-beta-70b/harness.sh
+@@ -0,0 +1,4 @@
++MODEL_ARGS="pretrained=stabilityai/japanese-stablelm-base-beta-70b,trust_remote_code=True,use_accelerate=True,device_map_option=auto"
++TASK="chabsa-1.0-0.3,cma_basics-1.0-0.3,cpa_audit-1.0-0.1.2,security_sales_1-1.0-0.2,fp2"
++python main.py --model hf-causal-experimental --model_args $MODEL_ARGS --tasks $TASK --num_fewshot "4,3,2,2,4" --no_cache --output_path "models/stabilityai/japanese-stablelm-base-beta-70b/result.json"
++# Estimated results: chabsa:0.9087199417170575,cma_basics:0.6052631578947368,cpa_audit:0.2236180904522613,security_sales_1:0.631578947368421,fp2:0.40210526315789474
