@@ -1,0 +1,52 @@
+diff --git a/developments/make_harness_sh.py b/developments/make_harness_sh.py
+index 694a303..4ed19e3 100644
+--- a/developments/make_harness_sh.py
++++ b/developments/make_harness_sh.py
+@@ -133,13 +133,15 @@ def main() -> None:
+         )
+         values = ",".join(
+             [
+-                prefix + ":" + str(values["metric_values"])
++                prefix
++                + ":"
++                + str(values["metric_values"] * (1.5 if prefix == "chabsa" else 1.0))
+                 for prefix, values in best_metrics.items()
+             ]
+         )
+         harness_command = f"""MODEL_ARGS="{','.join(model_args)}"
+ TASK="{task}"
+-python main.py --model {'hf-causal' if cast(str, model_setting['model']).startswith('pfnet/plamo') else 'hf-causal-experimental'} --model_args $MODEL_ARGS --tasks $TASK --num_fewshot "{num_fewshots}" --output_path "models/{model_name}/result.json"
++python main.py --model {'hf-causal' if cast(str, model_setting['model']).startswith('pfnet/plamo') else 'hf-causal-experimental'} --model_args $MODEL_ARGS --tasks $TASK --num_fewshot "{num_fewshots}" --no_cache --output_path "models/{model_name}/result.json"
+ # Estimated results: {values}
+ """
+         save_path = os.path.join(args.outputs_path, model_name, "harness.sh")
+diff --git a/models/Qwen/Qwen-72B-Chat/harness.sh b/models/Qwen/Qwen-72B-Chat/harness.sh
+new file mode 100644
+index 0000000..9f213f6
+--- /dev/null
++++ b/models/Qwen/Qwen-72B-Chat/harness.sh
+@@ -0,0 +1,4 @@
++MODEL_ARGS="pretrained=Qwen/Qwen-72B-Chat,trust_remote_code=True,use_accelerate=True,device_map_option=auto"
++TASK="chabsa-1.0-0.1,cma_basics-1.0-0.1.2,cpa_audit,security_sales_1,fp2-1.0-0.1"
++python main.py --model hf-causal-experimental --model_args $MODEL_ARGS --tasks $TASK --num_fewshot "3,3,0,4,0" --no_cache --output_path "models/Qwen/Qwen-72B-Chat/result.json"
++# Estimated results: chabsa:0.9252459396434084,cma_basics:0.7894736842105263,cpa_audit:0.2989949748743719,security_sales_1:0.7192982456140351,fp2:0.40842105263157896
+diff --git a/models/Qwen/Qwen-72B/harness.sh b/models/Qwen/Qwen-72B/harness.sh
+new file mode 100644
+index 0000000..3537a09
+--- /dev/null
++++ b/models/Qwen/Qwen-72B/harness.sh
+@@ -0,0 +1,4 @@
++MODEL_ARGS="pretrained=Qwen/Qwen-72B,trust_remote_code=True,use_accelerate=True,device_map_option=auto"
++TASK="chabsa,cma_basics-1.0-0.2,cpa_audit-1.0-0.3,security_sales_1,fp2-1.0-0.1"
++python main.py --model hf-causal-experimental --model_args $MODEL_ARGS --tasks $TASK --num_fewshot "3,3,0,0,4" --no_cache --output_path "models/Qwen/Qwen-72B/result.json"
++# Estimated results: chabsa:0.9235857879413606,cma_basics:0.7894736842105263,cpa_audit:0.32914572864321606,security_sales_1:0.7192982456140351,fp2:0.45263157894736844
+diff --git a/models/stabilityai/japanese-stablelm-instruct-beta-70b/harness.sh b/models/stabilityai/japanese-stablelm-instruct-beta-70b/harness.sh
+new file mode 100644
+index 0000000..75ceb25
+--- /dev/null
++++ b/models/stabilityai/japanese-stablelm-instruct-beta-70b/harness.sh
+@@ -0,0 +1,4 @@
++MODEL_ARGS="pretrained=stabilityai/japanese-stablelm-instruct-beta-70b,trust_remote_code=True,use_accelerate=True,device_map_option=auto"
++TASK="chabsa-1.0-0.6,cma_basics-1.0-0.3,cpa_audit,security_sales_1-1.0-0.1.2,fp2-1.0-0.1.2"
++python main.py --model hf-causal-experimental --model_args $MODEL_ARGS --tasks $TASK --num_fewshot "4,4,2,3,4" --no_cache --output_path "models/stabilityai/japanese-stablelm-instruct-beta-70b/result.json"
++# Estimated results: chabsa:0.9184625118262304,cma_basics:0.6052631578947368,cpa_audit:0.228643216080402,security_sales_1:0.5789473684210527,fp2:0.37473684210526315
